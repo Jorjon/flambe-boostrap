@@ -1,0 +1,23 @@
+# Internal name of the project.
+GameID: mygame
+
+# Sylized name of the project.
+GameName: My Flambe Game
+
+# Short description of the project.
+GameDescription: Created with Flambe Boostrap
+
+# Stylized name of the developer.
+DeveloperName: Jorjon
+
+# Internal name of the developer.
+DeveloperID: jorjon
+
+# Website of the developer.
+DeveloperURL: https://github.com/Jorjon/flambe-boostrap
+
+# Initial version of the project.
+GameVersion: 1.0.0
+
+# Image that will be used as developer logo.
+DeveloperLogo: developer-logo.png
