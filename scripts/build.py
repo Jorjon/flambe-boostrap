@@ -63,6 +63,7 @@ task("Generating","144x144","image")
 try:
     out = im.resize((144, 144),Image.ANTIALIAS)
     out.save("..\\build\\icons\\144x144.png")
+    out.save("..\\build\\assets\\loader\\logo.png")
 except Exception as e: critical(e.args[1])
 else: ok()
 
