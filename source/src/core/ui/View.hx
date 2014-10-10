@@ -13,7 +13,7 @@ import flambe.input.PointerEvent;
  * ...
  * @author Jorjon
  */
-class View extends Sprite implements IState {
+class View extends Sprite {
 
     public var inited:Bool;
     public var opaque:Bool = true;
@@ -102,27 +102,27 @@ class View extends Sprite implements IState {
         return containerButton;
 	}
     
-    
     /**
      * Creates the objects and allocate memory for rendering this view.
      * It doesn't show until we call activate().
      */
-    public function init():Void {
-        trace(bground);
+    public function show():Void {
         if (bground != null) owner.addChild(new Entity().add(new ImageSprite(bground)));
     }
     
     /**
-     * Shows and enables this view.
-     * Can be hidden calling deactivate().
+     * Enables this view.
+     * This is called after finishing the transition, if there is one. Otherwise
+     * it is called immediately after show().
      */
     public function activate():Void {
         // override
     }
     
     /**
-     * Hides and disables this view.
-     * Can be shown again calling activate().
+     * Disables this view. Good place to disconnect listeners.
+     * This is called before starting the transition, if there is one. Otherwise
+     * it is called immediately before hide().
      */
     public function deactivate():Void {
         // override
@@ -132,8 +132,17 @@ class View extends Sprite implements IState {
      * Frees up all the resources used by this view.
      * The view can't be used again until we call init().
      */
-    public function deinit():Void {
+    public function hide():Void {
         // override
+    }
+    
+    /**
+     * Frees up all the resources used by this view.
+     * This will be automatically called right before unreferenciing this
+     * object, which will mostly happen after hiding the view.
+     */
+    public function deinit():Void {
+       // override 
     }
     
     /**

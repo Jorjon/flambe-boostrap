@@ -36,7 +36,7 @@ class Controller implements IState{
     function showView(view:View, transition:String = "none"):Void {
         if (!view.inited) {
             view.inited = true;
-            view.init();
+            view.show();
         }
         var e_scene:Entity = new Entity();
         e_scene.add(new Scene(view.opaque));

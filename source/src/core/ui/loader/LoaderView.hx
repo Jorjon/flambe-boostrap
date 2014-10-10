@@ -19,7 +19,7 @@ class LoaderView extends View {
         this.model = model;
     }
     
-    override public function init():Void {
+    override public function show():Void {
         barfill = new FillSprite(0xFFFFFF, 100, 50);
         addSprite(barfill);
     }

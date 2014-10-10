@@ -17,8 +17,4 @@ class PreloaderView extends View {
         this.model = model;
     }
 
-    override public function init():Void {
-        
-    }
-    
 }
