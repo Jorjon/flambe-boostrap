@@ -8,6 +8,8 @@ import flambe.display.TextSprite;
 import flambe.display.Texture;
 import flambe.Entity;
 import flambe.input.PointerEvent;
+import flambe.System;
+import flambe.util.SignalConnection;
 
 /**
  * ...
@@ -15,10 +17,11 @@ import flambe.input.PointerEvent;
  */
 class View extends Sprite {
 
-    public var inited:Bool;
     public var opaque:Bool = true;
 	var bground:Texture;
     var resources:Resources;
+    var systemTouch:SignalConnection;
+    var systemTouchCallback:PointerEvent -> Void;
 
     public function new(resources:Resources, ?background:String) {
         super();
@@ -101,6 +104,30 @@ class View extends Sprite {
         containerButton.owner.addChild(new Entity().add(new ImageSprite(resources.getTexture(asset))));
         return containerButton;
 	}
+    
+    /**
+     * Listens to a full-screen touch. Useful for views with no buttons.
+     */
+    function registerSystemTouch(onPointerDown:PointerEvent -> Void):Void {
+        // if we are already holding the finger, skip this tap
+		if (System.pointer.isDown()) {
+			systemTouch = System.pointer.up.connect(onSysPointerUp);
+		} else {
+			systemTouch = System.pointer.down.connect(onSysPointerDown);
+		}
+        systemTouchCallback = onPointerDown;
+    }
+    
+    function onSysPointerUp(e:PointerEvent):Void {
+		systemTouch.dispose();
+		systemTouch = System.pointer.down.connect(onSysPointerDown);
+	}
+    
+    function onSysPointerDown(e:PointerEvent):Void {
+		systemTouch.dispose();
+		systemTouchCallback(e);
+	}
+    
     
     /**
      * Creates the objects and allocate memory for rendering this view.
