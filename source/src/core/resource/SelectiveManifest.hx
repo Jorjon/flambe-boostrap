@@ -1,13 +1,13 @@
-package core.asset;
+package core.resource;
 import flambe.asset.Manifest;
 import haxe.rtti.Meta;
 using flambe.util.Strings;
 
 /**
- * ...
+ * Expands the capabilities of the default Manifest class file.
  * @author Jorjon
  */
-class SelectiveManifest extends Manifest{
+class SelectiveManifest extends Manifest {
 
     public function new() {
         super();
@@ -17,7 +17,7 @@ class SelectiveManifest extends Manifest{
     /**
      * Gets the manifest of a pack in the asset directory, that was processed at build-time.
      * @param packName The folder name in your assets/ directory.
-     * @param required When true and this pack was not found, throw an error. Otherwise null is
+     * @param required When true and any pack was not found, throw an error. Otherwise null is
      *   returned.
      */
     public function addPacks(packNames:Array<String>, required:Bool = true):SelectiveManifest {
@@ -53,6 +53,11 @@ class SelectiveManifest extends Manifest{
         return this;
     }
     
+    /**
+     * Gets the manifest of a series of files inside many different packages.
+     * @param files An array of files, with the form packageName/fileName (without extension).
+     * @return
+     */
     public function addFiles(files:Array<String>):SelectiveManifest {
         var assets:Dynamic = Reflect.field(Meta.getType(Manifest), "assets")[0];
         

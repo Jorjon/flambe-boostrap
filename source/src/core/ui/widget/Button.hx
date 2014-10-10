@@ -1,4 +1,4 @@
-package urgame.screens.widgets;
+package core.ui.widget;
 
 import flambe.display.Sprite;
 import flambe.input.PointerEvent;

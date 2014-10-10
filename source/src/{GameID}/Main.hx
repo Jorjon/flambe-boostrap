@@ -1,32 +1,44 @@
 package {GameID};
 
-import flambe.Entity;
-import flambe.System;
-import flambe.asset.AssetPack;
+import core.Context;
+import core.resource.Resources;
+import core.resource.SelectiveManifest;
+import core.ui.loader.LoaderController;
+import core.ui.loader.LoaderModel;
+import core.ui.preloader.PreloaderController;
+import core.ui.StateManager;
 import flambe.asset.Manifest;
-import flambe.display.FillSprite;
-import flambe.display.ImageSprite;
+import flambe.System;
 
 class Main {
-    private static function main () {
-        // Wind up all platform-specific stuff
+    
+    static var context:Context;
+    
+    static function main () {
+        
+        // Wind up all platform-specific stuff.
         System.init();
-
-        // Load up the compiled pack in the assets directory named "bootstrap"
-        var manifest = Manifest.fromAssets("bootstrap");
-        var loader = System.loadAssetPack(manifest);
-        loader.get(onSuccess);
-    }
-
-    private static function onSuccess (pack :AssetPack) {
-        // Add a solid color background
-        var background = new FillSprite(0x202020, System.stage.width, System.stage.height);
-        System.root.addChild(new Entity().add(background));
-
-        // Add a plane that moves along the screen
-        var plane = new ImageSprite(pack.getTexture("plane"));
-        plane.x._ = 30;
-        plane.y.animateTo(200, 6);
-        System.root.addChild(new Entity().add(plane));
+        
+        // Create managers.
+        context = new Context();
+        context.states = new StateManager(context);
+        context.resources = new Resources(context);
+        
+        // Initial packages to be loaded.
+        var initialManifest:SelectiveManifest = new SelectiveManifest();
+        initialManifest.addPacks(["initial"]);
+        
+        // The preloader loads the loader, and the loader loads the inital packages listed above.
+        context.states.goto(
+            new PreloaderController(
+                context, new LoaderModel(Manifest.fromAssets("loader"),
+                    new LoaderController(
+                        context, new LoaderModel(initialManifest,
+                            new InitialController(context)
+                        )
+                    )
+                )
+            )
+        );
     }
 }
