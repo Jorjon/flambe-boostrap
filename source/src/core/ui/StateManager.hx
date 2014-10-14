@@ -1,4 +1,5 @@
 package core.ui;
+
 import flambe.Entity;
 import flambe.scene.Director;
 import flambe.scene.Transition;

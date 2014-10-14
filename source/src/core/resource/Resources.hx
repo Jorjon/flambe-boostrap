@@ -35,9 +35,7 @@ class Resources{
     
     public function getTexture(name:String, required:Bool = true):Texture {
         var asset;
-        trace(loadedPackages.length);
         for (i in 0...loadedPackages.length) {
-            trace((i == loadedPackages.length - 1));
             asset = loadedPackages[i].getTexture(name, (i == loadedPackages.length - 1) ? required : false);
             if (asset != null) return asset;
         }
