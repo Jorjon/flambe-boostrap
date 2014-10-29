@@ -1,8 +1,8 @@
-package urgame.screens.widgets;
+package core.ui.widget;
 
-import core.Audio;
-import flambe.display.ImageSprite;
-import flambe.Entity;
+import core.audio.Audio;
+import core.ui.widget.Button;
+import flambe.display.Texture;
 import flambe.input.PointerEvent;
 
 /**
@@ -10,42 +10,36 @@ import flambe.input.PointerEvent;
  * @author Jorjon
  */
 class MuteButton extends Button{
+    var assetOn:Texture;
+    var assetOff:Texture;
 
-    private var imageOn:ImageSprite;
-    private var imageOff:ImageSprite;
-    private var entity:Entity;
-    
-    public function new(assetOn:String, assetOff:String) {
-        entity = new Entity();
-        imageOn = new ImageSprite(Main.getTexture(assetOn));
-        imageOff = new ImageSprite(Main.getTexture(assetOff));
+    public function new(assetOn:Texture, assetOff:Texture) {
+        this.assetOff = assetOff;
+        this.assetOn = assetOn;
         if (Audio.isPlaying() && Audio.volume._ > 0) {
-            entity.add(imageOn);
+            super(assetOn);
         } else {
-            entity.add(imageOff);
+            super(assetOff);
         }
-        if (owner != null) {
-            onAdded();
-        }
-        super();
     }
     
     override private function onDown(e:PointerEvent):Bool {
         if (!super.onDown(e)) return false;
         
-        if (imageOn.owner == null) {
+        if (texture == assetOff) {
             Audio.volume.animateTo(1, .2);
-            entity.add(imageOn);
-        } else if (imageOff.owner == null) {
+            texture = assetOn;
+        } else if (texture == assetOn) {
             Audio.volume.animateTo(0, .2);
-            entity.add(imageOff);
+            texture = assetOff;
         }
         return true;
     }
     
-    override public function onAdded() {
-        super.onAdded();
-        owner.addChild(entity);
+    override function onOut(e:PointerEvent):Bool {
+        if (origin == null) return false;
+        y.animateTo(origin.y - 2, .1);
+        return true;
     }
     
 }

@@ -9,17 +9,21 @@ import flambe.System;
  * Basic screen flow system. It uses an implementation of MVC pattern.
  * @author Jorjon
  */
-class StateManager {
+class StateManager extends Director {
     
     var context:Context;
-    var director:Director;
     var currentController:Controller;
     var currentView:View;
 
     public function new(context:Context) {
+        super();
         this.context = context;
-        director = new Director();
-        System.root.add(director);
+        System.root.add(this);
+    }
+    
+    override public function onUpdate(dt:Float) {
+        super.onUpdate(dt);
+        currentController.update(dt);
     }
 	
 	public function goto(controller:Controller) {
@@ -52,7 +56,7 @@ class StateManager {
         currentView = view;
         currentView.show();
         currentView.activate();
-        director.unwindToScene(scene, transition);
+        unwindToScene(scene, transition);
     }
     
 }

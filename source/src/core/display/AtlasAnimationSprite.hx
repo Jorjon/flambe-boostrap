@@ -1,8 +1,10 @@
 package core.display;
+import core.resource.Resources;
 import flambe.display.Graphics;
 import flambe.display.Sprite;
 import flambe.display.Texture;
 import flambe.math.Rectangle;
+import haxe.Json;
 
 /**
  * ...
@@ -10,46 +12,48 @@ import flambe.math.Rectangle;
  */
 class AtlasAnimationSprite extends Sprite{
 
-    public var frameRate:Float = 60;
-    public var sourceFile(get, null):String;
-    public var sourceImage(get, null):String;
+    public var frameRate:Float = 15;
     var currentAnimation:AnimationData;
-    var currentFrameIndex:Int;
     var currentFrame:AtlasData;
     var nextAnimation:AnimationData;
     var loadedAnimations:Map<String, AnimationData>;
-    var animationDataJson:Dynamic;
-    var atlasDataJson:Dynamic;
     var atlasesData:Map<String, AtlasData>;
     var atlasTexture:Texture;
+    var currentTime:Float;
+    var resources:Resources;
+    var repeat:Bool;
+    var stopped:Bool;
+    public var current(get, null):String;
+    var callbacks:Map < String, String -> Void >;
+    var lastFrameIndex:Int;
 
-    public function new() {
+    public function new(resources:Resources) {
         super();
+        this.resources = resources;
+        stopped = false;
+        callbacks = new Map < String, String -> Void > ();
     }
     
-    function get_sourceFile():String {
-        return animationDataJson.source;
-    }
-    
-    function get_sourceImage():String {
-        return atlasDataJson.meta.image.substr(0, atlasDataJson.meta.image.lastIndexOf("."));
-    }
-    
-    public function loadAnimationData(json:Dynamic):AtlasAnimationSprite {
-        animationDataJson = json;
-        return this;
+    public function getLabelPosition(animation:String, label:String):Int {
+        return loadedAnimations[animation].labels[label];
     }
     
     function objectToRectangle(object:Dynamic):Rectangle {
         return new Rectangle(object.x, object.y, object.w, object.h);
     }
     
-    public function loadSourceData(json:Dynamic):AtlasAnimationSprite {
-        atlasDataJson = json;
-        return this;
+    /**
+     * Calls a function when any of loaded animations reaches this label.
+     * @param label
+     */
+    public function setLabelCallback(label:String, callback:String -> Void):Void {
+        callbacks[label] = callback;
     }
     
-    function invalidate():AtlasAnimationSprite {
+    public function load(id:String):AtlasAnimationSprite {
+        var animationDataJson = Json.parse(resources.getFile(id + ".json").toString());
+        var atlasDataJson = Json.parse(resources.getFile(animationDataJson.source).toString());
+        var atlasTexture = resources.getTexture(atlasDataJson.meta.image.substr(0, atlasDataJson.meta.image.lastIndexOf(".")));
         atlasesData = new Map<String, AtlasData>();
         for (i in Reflect.fields(atlasDataJson.frames)) {
             var name:String = i;
@@ -58,30 +62,54 @@ class AtlasAnimationSprite extends Sprite{
         }
         loadedAnimations = new Map<String, AnimationData>();
         for (i in Reflect.fields(animationDataJson.animations)) {
-            var filter:String = Reflect.field(animationDataJson.animations, i);
-            // Gather all frames. Expands %c to search a digit like 000, 001, 002, etc; inside the animation list.
+            var filter:String;
+            var labels:Map<String, Int> = new Map<String, Int>();
+            var animationsData:Dynamic = Reflect.field(animationDataJson.animations, i);
+            
+            // If `animations` is a string
+            if (Std.is(animationsData, String)) {
+                
+                // Filter is the default setting value.
+                filter = Std.string(animationsData);
+            
+            // If `animations` is an object, assume more settings
+            } else {
+                
+                // Filter should be always included
+                filter = animationsData.filter;
+                
+                // TODO: Labels need to be numerically sorted in ascended way, so we can check for
+                // the next label instead of traversing the entire label array each frame.
+                if (Reflect.hasField(animationsData, "labels")) {
+                    for (label in Reflect.fields(animationsData.labels)) {
+                        // Labels are stored in base 0, must be declared in base 1.
+                        labels[label] = Std.parseInt(Reflect.field(animationsData.labels, label)) - 1;
+                    }
+                }
+                
+            }
+            // Gather all frames. Expands %c to search a digit like 000, 001,
+            // 002, etc; inside the animation list.
             var j = 0, frame, frameList = new Array<AtlasData>();
             while ((frame = atlasesData.get(StringTools.replace(filter, "%c", StringTools.lpad(Std.string(j), "0", 3)))) != null) {
                 frameList.push(frame);
                 j++;
             }
             
-            loadedAnimations[i] = new AnimationData(i, frameList);
+            loadedAnimations[i] = new AnimationData(i, frameList, labels);
         }
         return this;
     }
     
-    public function loadImageData(texture:Texture):AtlasAnimationSprite {
-        atlasTexture = texture;
-        return invalidate();
-    }
-    
-    public function play(name:String):Void {
+    public function play(name:String, repeat:Bool = true):AtlasAnimationSprite {
+        this.repeat = repeat;
+		currentTime = 0;
         playData(loadedAnimations[name]);
+        return this;
     }
     
-    public function playNext():Void {
-        
+    public function playNext(name:String, repeat:Bool = true):Void {
+        nextAnimation = loadedAnimations[name];
     }
     
     public function pause():Void {
@@ -93,25 +121,43 @@ class AtlasAnimationSprite extends Sprite{
     }
     
     public function stop():Void {
-        
+        stopped = true;
     }
     
     override public function onUpdate(dt:Float) {
-        var rate:Float = 1 / frameRate;
-        if (currentFrameIndex == currentAnimation.frames.length) {
-            currentFrameIndex = 0;
+        super.onUpdate(dt);
+        if (stopped) return;
+        var currentFrameIndex = Math.floor(currentTime * frameRate);
+        
+        // Check labels. Check from last to current so we don't miss any label if animation is fast.
+        // Doesn't support multiple labels in the same frame.
+        // TODO: Avoid traversing entire array by ordering labels (or callbacks).
+        //trace(currentAnimation.name, lastFrameIndex, currentFrameIndex, currentAnimation.labels, callbacks);
+        for (i in currentAnimation.labels.keys()) {
+            if (currentAnimation.labels[i] > lastFrameIndex &&
+                currentAnimation.labels[i] <= currentFrameIndex &&
+                callbacks.exists(i))
+                callbacks[i](currentAnimation.name);
+        }
+        lastFrameIndex = currentFrameIndex;
+        if (currentFrameIndex >= currentAnimation.frames.length) {
+            // If we passed through the limit, we cycle the animation
+            currentTime -= currentAnimation.frames.length / frameRate;
             if (nextAnimation != null) {
                 playData(nextAnimation);
+            } else if (!repeat) {
+                stop();
             }
         } else {
             currentFrame = currentAnimation.frames[currentFrameIndex];
         }
-        currentFrameIndex++;
+        currentTime += dt;
     }
     
     function playData(data:AnimationData):Void {
         currentAnimation = data;
-        currentFrame = currentAnimation.frames[currentFrameIndex];
+        lastFrameIndex = -1;
+        currentFrame = currentAnimation.frames[0];
     }
     
     override public function draw(g:Graphics) {
@@ -124,6 +170,10 @@ class AtlasAnimationSprite extends Sprite{
 
     override public function getNaturalHeight():Float {
         return currentFrame.sourceSize.height;
+    }
+    
+    function get_current():String {
+        return currentAnimation.name;
     }
     
 }

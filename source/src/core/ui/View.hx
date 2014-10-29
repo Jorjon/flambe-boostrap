@@ -1,6 +1,8 @@
 package core.ui;
 import core.resource.Resources;
 import core.ui.widget.Button;
+import core.ui.widget.MuteButton;
+import flambe.display.Font;
 import flambe.display.Font.TextAlign;
 import flambe.display.ImageSprite;
 import flambe.display.Sprite;
@@ -12,7 +14,7 @@ import flambe.System;
 import flambe.util.SignalConnection;
 
 /**
- * ...
+ * @TODO: views should be completely detached from controllers, or they should be completely attached (no model involved).
  * @author Jorjon
  */
 class View extends Sprite {
@@ -53,11 +55,11 @@ class View extends Sprite {
 	
 	/// create a text
 	function createText2(text:String, font:String = "arial", ?align:TextAlign, ?wrap:Float):TextSprite {
-		//var textSprite:TextSprite = cast new TextSprite(new Font(Main.mainPack, font), text).disablePointer();
-		//if (align != null) textSprite.align = align;
-		//if (wrap != null) textSprite.wrapWidth._ = wrap;
-		//owner.addChild(new Entity().add(textSprite));
-		//return textSprite;
+		var textSprite:TextSprite = cast new TextSprite(new Font(resources.findFile(font + ".fnt"), font), text).disablePointer();
+		if (align != null) textSprite.align = align;
+		if (wrap != null) textSprite.wrapWidth._ = wrap;
+		owner.addChild(new Entity().add(textSprite));
+		return textSprite;
         return null;
 	}
 	
@@ -90,20 +92,26 @@ class View extends Sprite {
 	}
 	
 	/// create a button and add it to the screen
-	function createButton(onClick:PointerEvent -> Void, asset:String):Button {
-		var button:Button = createButton2(onClick, asset);
+	function createButton(onClick:PointerEvent -> Void, normal:String, ?hover:String):Button {
+		var button:Button = createButton2(onClick, normal, hover);
 		owner.addChild(button.owner);
 		return button;
 	}
 	
 	/// create a button
-	function createButton2(onClick:PointerEvent -> Void, asset:String):Button {
-        var containerButton:Button = new Button();
-        new Entity().add(containerButton);
-        containerButton.setCallback(onClick);
-        containerButton.owner.addChild(new Entity().add(new ImageSprite(resources.getTexture(asset))));
-        return containerButton;
+	function createButton2(onClick:PointerEvent -> Void, normal:String, ?hover:String):Button {
+        var button:Button = new Button(resources.getTexture(normal), hover != null ? resources.getTexture(hover) : null);
+        new Entity().add(button);
+        button.setCallback(onClick);
+        return button;
 	}
+    
+    /// Creates a MuteButton and adds it to the screen.
+    function createMuteButton(on:String, off:String):MuteButton {
+        var button:MuteButton = new MuteButton(resources.getTexture(on), resources.getTexture(off));
+        owner.addChild(new Entity().add(button));
+        return button;
+    }
     
     /**
      * Listens to a full-screen touch. Useful for views with no buttons.
@@ -127,6 +135,19 @@ class View extends Sprite {
 		systemTouch.dispose();
 		systemTouchCallback(e);
 	}
+    
+    function center(sprite:Sprite, ?container:Sprite):Sprite {
+        var containerWidth:Float, containerHeight:Float;
+        if (container == null) {
+            containerWidth = 750;
+            containerHeight = 500;
+        } else {
+            containerWidth = container.getNaturalWidth();
+            containerHeight = container.getNaturalHeight();
+        }
+        sprite.setXY((containerWidth - sprite.getNaturalWidth()) / 2, (containerHeight - sprite.getNaturalHeight()) / 2);
+        return sprite;
+    }
     
     
     /**

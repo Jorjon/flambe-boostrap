@@ -42,6 +42,19 @@ class Resources{
         return null;
     }
     
+    /**
+     * Finds the AssetPack containing the given File.
+     * @param name
+     * @return The AssetPack containing the given File.
+     */
+    public function findFile(name:String):AssetPack {
+        var asset;
+        for (i in 0...loadedPackages.length) {
+            asset = loadedPackages[i].getFile(name, false);
+            if (asset != null) return loadedPackages[i];
+        } return null;
+    }
+    
     public function getFile(name:String, required:Bool = true):File {
         var asset;
         for (i in 0...loadedPackages.length) {

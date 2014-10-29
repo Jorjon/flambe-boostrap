@@ -1,31 +1,21 @@
-package core;
+package core.audio;
+
+import core.resource.Resources;
 import flambe.animation.AnimatedFloat;
 import flambe.sound.Playback;
 import flambe.sound.Sound;
 import flambe.System;
-import urgame.Main;
 
 /**
  * ...
  * @author Jorjon
  */
 
- enum AudioChannel {
-     MUSIC;
-     BALLS;
-     POWERUPS;
-     CROWD;
-     OTHER;
- }
- 
 class Audio {
     static private var intervalFrames:Float = 0;
     static public var volume(get, null):AnimatedFloat;
     static private var channels:Map<AudioChannel, Playback> = new Map<AudioChannel, Playback>();
-
-    // Prevent sound to trigger too rapidly, in a near future it should also refer to 
-    static private var soundPollingMap:Map<String, Float> = new Map<String, Float>();
-    static public var soundPollingSeconds:Float = 0.4;
+    static public var resources:Resources;
 
     /**
      * Play a sound.
@@ -36,24 +26,9 @@ class Audio {
      * @param weak If true, it there's already a sound on that channel it won't play. If false, if there's already
      *             a sound on that channel it will stop the previous and play this one.
      */
-	static public function play(id:String, ?channel:AudioChannel, volume:Float = 1, loop:Bool = false, weak:Bool = false):Void
-    {
-        // Sound polling - to prevent bugs or glitchy sound
-        var ts:Float = Main.timeStamp();
-        if(soundPollingMap.exists(id))
-        {
-            var oldTs:Float = soundPollingMap.get(id);
-
-            // Sound played not long ago, exiting 
-            if(ts-oldTs<soundPollingSeconds) return;
-            soundPollingMap.set(id, ts);
-            //trace(id+": "+(ts-oldTs));
-        } else {
-            soundPollingMap.set(id, ts);
-        }
-
-        var sfx:Sound = Main.getSound(id);
-        if(sfx.duration<=0) return;
+	static public function play(id:String, ?channel:AudioChannel, volume:Float = 1, loop:Bool = false, weak:Bool = false):Playback {
+        var sfx:Sound = resources.getSound(id);
+        if (sfx.duration <= 0) return null;
         
         if (channel == null) channel = OTHER;
         // there's something on that channel, maybe a playing sound or a finished sound
@@ -61,17 +36,18 @@ class Audio {
             var playback:Playback = channels.get(channel);
             // there's no sound playing on that channel, play freely
             if (playback == null || playback.complete._) {
-                __playSoundInChannel(sfx, volume, loop, channel, playback);
+                return __playSoundInChannel(sfx, volume, loop, channel, playback);
             // there's already a playing sound in that channel, check weak condition
             } else {
-                if (weak) return;
-                else {
-                    __playSoundInChannel(sfx, volume, loop, channel, playback);
+                if (weak) {
+                    return null;
+                } else {
+                    return __playSoundInChannel(sfx, volume, loop, channel, playback);
                 }
             }
         // there's nothing on that channel, play freely
         } else {
-            __playSoundInChannel(sfx, volume, loop, channel);
+            return __playSoundInChannel(sfx, volume, loop, channel);
         }
     }
 
@@ -108,8 +84,8 @@ class Audio {
         }
     }
     
-    static public function playMusic(id:String):Void {
-        play(id, MUSIC, 1, true, false);
+    static public function playMusic(id:String):Playback {
+        return play(id, MUSIC, 1, true, false);
     }
     
     /**

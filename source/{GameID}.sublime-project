@@ -1,8 +1,15 @@
 {
-	"folders":
-	[
-		{
-			"path": "src"
-		}
-	]
+    "folders":
+    [
+        {
+            "path": "/",
+            "folder_exclude_patterns": [
+                "build",
+                "icons"
+            ],
+            "file_exclude_patterns": [
+                "*.png"
+            ]
+        }
+    ]
 }

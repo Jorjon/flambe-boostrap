@@ -48,6 +48,10 @@ class Controller implements IState{
             case "none": return null;
 		} return null;
 	}
+    
+    public function update(dt:Float){
+        // override
+    }
 	
     /* INTERFACE core.ui.IState */
     
